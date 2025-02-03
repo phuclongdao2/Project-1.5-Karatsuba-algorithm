@@ -1,11 +1,17 @@
-﻿#include "header.hpp"
+#include "header.hpp"
 
 //Cộng hai đa thức A, B
 Polynomial Add(const Polynomial& A, const Polynomial& B) {
-    Polynomial Result(std::max(A.size(), B.size()), 0);
-    for (int i = 0; i < A.size(); ++i) Result[i] += A[i];
-    for (int i = 0; i < B.size(); ++i) Result[i] += B[i];
-    return Result;
+    if (A.size() <= B.size()) {
+        Polynomial Result(B);
+        for (int i = 0; i < A.size(); ++i) Result[i] += A[i];
+        return Result;
+    }
+    else {
+        Polynomial Result(A);
+        for (int i = 0; i < B.size(); ++i) Result[i] += B[i];
+        return Result;
+    }
 }
 
 //Thuật toán trực tiếp nhân hai đa thức A, B
@@ -20,20 +26,9 @@ Polynomial BruteForceMultiply(const Polynomial& A, const Polynomial& B) {
 
 //Thuật toán Karatsuba song song nhân hai đa thức A, B
 void ParallelKaratsuba(const Polynomial& A, const Polynomial& B, Polynomial& Result, int depth) {
-    int n = std::max(A.size(), B.size());
+    int n = A.size();
     if (n <= 50) Result = BruteForceMultiply(A, B);
     else {
-        //Quy về hai đa thức có bậc bằng nhau
-        if (A.size() < B.size()) {
-            Polynomial A_resized(A);
-            A_resized.resize(n, 0);
-            ParallelKaratsuba(A_resized, B, Result, depth);
-        }
-        else if (A.size() > B.size()) {
-            Polynomial B_resized(B);
-            B_resized.resize(n, 0);
-            ParallelKaratsuba(A, B_resized, Result, depth);
-        }
         int mid = n >> 1;
         Result.resize((n << 1) - 1, 0);
         Polynomial A_low(A.begin(), A.begin() + mid);
@@ -65,4 +60,20 @@ void ParallelKaratsuba(const Polynomial& A, const Polynomial& B, Polynomial& Res
             if (i < P1.size()) Result[i + mid] -= P1[i];
         }
     }
+}
+
+//Quy về hai đa thức có bậc bằng nhau
+void PrepareKaratsuba(const Polynomial& A, const Polynomial& B, Polynomial& Result, int depth) {
+    int n = std::max(A.size(), B.size());
+    if (A.size() < B.size()) {
+        Polynomial A_resized(A);
+        A_resized.resize(n, 0);
+        ParallelKaratsuba(A_resized, B, Result, depth);
+    }
+    else if (A.size() > B.size()) {
+        Polynomial B_resized(B);
+        B_resized.resize(n, 0);
+        ParallelKaratsuba(A, B_resized, Result, depth);
+    }
+    else ParallelKaratsuba(A, B, Result, depth);
 }
