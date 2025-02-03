@@ -1,57 +1,54 @@
 #include "header.hpp"
 
 //Cộng hai đa thức A, B
-Polynomial Add(const Polynomial& A, const Polynomial& B) {
-    if (A.size() <= B.size()) {
-        Polynomial Result(B);
-        for (int i = 0; i < A.size(); ++i) Result[i] += A[i];
+Polynomial Add(const long long* a, int size_a, const long long* b, int size_b) {
+    if (size_a > size_b) {
+        Polynomial Result = { a, a + size_a };
+        for (int i = 0; i < size_b; ++i) Result[i] += b[i];
         return Result;
     }
     else {
-        Polynomial Result(A);
-        for (int i = 0; i < B.size(); ++i) Result[i] += B[i];
+        Polynomial Result = { b, b + size_b };
+        for (int i = 0; i < size_a; ++i) Result[i] += a[i];
         return Result;
     }
 }
 
 //Thuật toán trực tiếp nhân hai đa thức A, B
-Polynomial BruteForceMultiply(const Polynomial& A, const Polynomial& B) {
-    Polynomial Result(A.size() + B.size() - 1, 0);
-    for (int i = 0; i < A.size(); ++i) {
-        long long temp = A[i];
-        for (int j = 0; j < B.size(); ++j) Result[i + j] += temp * B[j];
+Polynomial BruteForceMultiply(const long long* a, int size_a, const long long* b, int size_b) {
+    Polynomial Result(size_a + size_b - 1, 0);
+    for (int i = 0; i < size_a; ++i) {
+        long long temp = a[i];
+        for (int j = 0; j < size_b; ++j) Result[i + j] += temp * b[j];
     }
     return Result;
 }
 
-//Thuật toán Karatsuba song song nhân hai đa thức A, B
-void ParallelKaratsuba(const Polynomial& A, const Polynomial& B, Polynomial& Result, int depth) {
-    int n = A.size();
-    if (n <= 50) Result = BruteForceMultiply(A, B);
+//Thuật toán Karatsuba song song nhân hai đa thức A, B có cùng bậc
+void ParallelKaratsuba(const long long *a, const long long *b, int size, Polynomial& Result, int depth) {
+    if (size <= 50) Result = BruteForceMultiply(a, size, b, size);
     else {
-        int mid = n >> 1;
-        Result.resize((n << 1) - 1, 0);
-        Polynomial A_low(A.begin(), A.begin() + mid);
-        Polynomial A_high(A.begin() + mid, A.end());
-        Polynomial B_low(B.begin(), B.begin() + mid);
-        Polynomial B_high(B.begin() + mid, B.end());
-        Polynomial P1(A_low.size() + B_low.size() - 1, 0);
-        Polynomial P2(A_high.size() + B_high.size() - 1, 0);
-        Polynomial P3(A_high.size() + B_high.size() - 1, 0);
+        int mid = size >> 1;
+        Result.resize((size << 1) - 1, 0);
+        Polynomial P1((mid << 1) - 1, 0);
+        Polynomial P2(((size - mid) << 1) - 1, 0);
+        Polynomial P3(((size - mid) << 1) - 1, 0);
+        Polynomial sumA = Add(a, mid, a + mid, size - mid);
+        Polynomial sumB = Add(b, mid, b + mid, size - mid);
 
         //Có sử dụng tính toán song song
         if (depth) {
-            std::thread thread1(ParallelKaratsuba, std::ref(A_low), std::ref(B_low), std::ref(P1), depth - 1);
-            std::thread thread2(ParallelKaratsuba, std::ref(A_high), std::ref(B_high), std::ref(P2), depth - 1);
-            ParallelKaratsuba(Add(A_low, A_high), Add(B_low, B_high), P3, depth - 1);
+            std::thread thread1(ParallelKaratsuba, a, b, mid, std::ref(P1), depth - 1);
+            std::thread thread2(ParallelKaratsuba, a + mid, b + mid, size - mid, std::ref(P2), depth - 1);
+            ParallelKaratsuba(&sumA[0], &sumB[0], size - mid, P3, depth - 1);
             thread1.join(); thread2.join();
         }
 
         //Không sử dụng tính toán song song
         else {
-            ParallelKaratsuba(A_low, B_low, P1, 0);
-            ParallelKaratsuba(A_high, B_high, P2, 0);
-            ParallelKaratsuba(Add(A_low, A_high), Add(B_low, B_high), P3, 0);
+            ParallelKaratsuba(a, b, mid, P1, 0);
+            ParallelKaratsuba(a + mid, b + mid, size - mid, P2, 0);
+            ParallelKaratsuba(&sumA[0], &sumB[0], size - mid, P3, 0);
         }
         for (int i = 0; i < P1.size(); ++i) Result[i] = P1[i];
         for (int i = 0; i < P2.size(); ++i) Result[i + (mid << 1)] += P2[i];
@@ -68,12 +65,12 @@ void PrepareKaratsuba(const Polynomial& A, const Polynomial& B, Polynomial& Resu
     if (A.size() < B.size()) {
         Polynomial A_resized(A);
         A_resized.resize(n, 0);
-        ParallelKaratsuba(A_resized, B, Result, depth);
+        ParallelKaratsuba(&A_resized[0], &B[0], n, Result, depth);
     }
     else if (A.size() > B.size()) {
         Polynomial B_resized(B);
         B_resized.resize(n, 0);
-        ParallelKaratsuba(A, B_resized, Result, depth);
+        ParallelKaratsuba(&A[0], &B_resized[0], n, Result, depth);
     }
-    else ParallelKaratsuba(A, B, Result, depth);
+    else ParallelKaratsuba(&A[0], &B[0], n, Result, depth);
 }
