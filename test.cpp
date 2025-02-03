@@ -1,4 +1,4 @@
-﻿#include "header.hpp"
+#include "header.hpp"
 const int NUM_TESTS = 10, MAX_PARALLEL_DEPTH = 5;
 Polynomial P, Q;
 
@@ -12,7 +12,7 @@ int main() {
     for (int i = 0; i <= deg; ++i) Q.push_back(dist(gen));
 
     //Tính P*Q bằng thuật toán trực tiếp (để kiểm tra kết quả)
-    Polynomial BruteForceAns = BruteForceMultiply(P, Q);
+    Polynomial BruteForceAns = BruteForceMultiply(&P[0], deg + 1, &Q[0], deg + 1);
 
     //Tính P*Q bằng Karatsuba với depth lần lượt là 0, 1, ..., MAX_PARALLEL_DEPTH (depth = 0: không dùng tính toán song song)
     std::vector <double> time_taken[MAX_PARALLEL_DEPTH + 1];
@@ -21,7 +21,7 @@ int main() {
         printf("Test %d:\n", test);
         for (int depth = 0; depth <= MAX_PARALLEL_DEPTH; ++depth) {
             clock_t start = clock();
-            ParallelKaratsuba(P, Q, ans[depth], depth);
+            PrepareKaratsuba(P, Q, ans[depth], depth);
             clock_t finish = clock();
             double taken = (double)(finish - start) / CLOCKS_PER_SEC * 1000;
             if (test > NUM_TESTS / 2) time_taken[depth].push_back(taken);
