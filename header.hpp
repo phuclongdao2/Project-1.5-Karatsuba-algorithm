@@ -8,6 +8,7 @@
 #include <vector>
 using Polynomial = std::vector<long long>;
 
-Polynomial Add(const Polynomial& A, const Polynomial& B);
-Polynomial BruteForceMultiply(const Polynomial& A, const Polynomial& B);
-void ParallelKaratsuba(const Polynomial& A, const Polynomial& B, Polynomial& Result, int depth);
+Polynomial Add(const long long* a, int size_a, const long long* b, int size_b);
+Polynomial BruteForceMultiply(const long long* a, int size_a, const long long* b, int size_b);
+void ParallelKaratsuba(const long long* a, const long long* b, int size, Polynomial& Result, int depth);
+void PrepareKaratsuba(const Polynomial& A, const Polynomial& B, Polynomial& Result, int depth);
