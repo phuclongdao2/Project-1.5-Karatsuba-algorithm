@@ -37,6 +37,6 @@ int main() {
     for (int depth = 0; depth <= MAX_PARALLEL_DEPTH; ++depth) {
         double sum = 0;
         for (auto t : time_taken[depth]) sum += t;
-        printf("Depth %d: %.0f ms.\n", depth, sum / (NUM_TESTS / 2));
+        printf("Depth %d: %.0f ms.\n", depth, sum / (NUM_TESTS - NUM_TESTS / 2));
     }
 }
