@@ -15,8 +15,8 @@ void BruteForceMultiply(const long long* a, int size_a, const long long* b, int 
 }
 
 //Thuật toán Karatsuba song song nhân hai đa thức A, B có cùng bậc
-void ParallelKaratsuba(const long long* a, const long long* b, int size, Polynomial& Result, int depth) {
-    if (size <= 100) BruteForceMultiply(a, size, b, size, Result.data());
+void ParallelKaratsuba(const long long* a, const long long* b, int size, long long* Result, int depth) {
+    if (size <= 100) BruteForceMultiply(a, size, b, size, Result);
     else {
         int mid = size >> 1, high = size - mid;
         int midsize = (mid << 1) - 1, highsize = (high << 1) - 1;
@@ -29,21 +29,21 @@ void ParallelKaratsuba(const long long* a, const long long* b, int size, Polynom
 
         //Có sử dụng tính toán song song
         if (depth) {
-            std::thread thread1([&] { ParallelKaratsuba(a, b, mid, P1, depth - 1); });
-            std::thread thread2([&] { ParallelKaratsuba(a + mid, b + mid, high, P2, depth - 1); });
-            ParallelKaratsuba(sumAsumB.data(), &sumAsumB[high], high, P3, depth - 1);
+            std::thread thread1([&] { ParallelKaratsuba(a, b, mid, P1.data(), depth - 1); });
+            std::thread thread2([&] { ParallelKaratsuba(a + mid, b + mid, high, P2.data(), depth - 1); });
+            ParallelKaratsuba(sumAsumB.data(), &sumAsumB[high], high, P3.data(), depth - 1);
             thread1.join(); thread2.join();
         }
 
         //Không sử dụng tính toán song song
         else {
-            ParallelKaratsuba(a, b, mid, P1, 0);
-            ParallelKaratsuba(a + mid, b + mid, high, P2, 0);
-            ParallelKaratsuba(sumAsumB.data(), &sumAsumB[high], high, P3, 0);
+            ParallelKaratsuba(a, b, mid, P1.data(), 0);
+            ParallelKaratsuba(a + mid, b + mid, high, P2.data(), 0);
+            ParallelKaratsuba(sumAsumB.data(), &sumAsumB[high], high, P3.data(), 0);
         }
 
-        std::copy_n(P1.begin(), midsize, Result.begin());
-        std::copy_n(P2.begin(), highsize, Result.begin() + mid * 2);
+        std::copy_n(P1.begin(), midsize, Result);
+        std::copy_n(P2.begin(), highsize, Result + mid * 2);
         Result[midsize] = 0;
         int i = 0;
         for (; i < midsize; ++i) Result[i + mid] += P3[i] - P1[i] - P2[i];
@@ -62,12 +62,12 @@ void PrepareKaratsuba(const Polynomial& A, const Polynomial& B, Polynomial& Resu
     if (A.size() < B.size()) {
         Polynomial A_resized(size, 0);
         std::copy(A.begin(), A.end(), A_resized.begin());
-        ParallelKaratsuba(A_resized.data(), B.data(), size, Result, depth);
+        ParallelKaratsuba(A_resized.data(), B.data(), size, Result.data(), depth);
     }
     else if (A.size() > B.size()) {
         Polynomial B_resized(size, 0);
         std::copy(B.begin(), B.end(), B_resized.begin());
-        ParallelKaratsuba(A.data(), B_resized.data(), size, Result, depth);
+        ParallelKaratsuba(A.data(), B_resized.data(), size, Result.data(), depth);
     }
-    else ParallelKaratsuba(A.data(), B.data(), size, Result, depth);
+    else ParallelKaratsuba(A.data(), B.data(), size, Result.data(), depth);
 }
