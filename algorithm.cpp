@@ -7,25 +7,23 @@ void Add(const long long* a, int size_a, const long long* b, int size_b, long lo
 }
 
 //Thuật toán trực tiếp nhân hai đa thức A, B
-Polynomial BruteForceMultiply(const long long* a, int size_a, const long long* b, int size_b) {
-    Polynomial Result(size_a + size_b - 1, 0);
+void BruteForceMultiply(const long long* a, int size_a, const long long* b, int size_b, long long* Result) {
     for (int i = 0; i < size_a; ++i) {
         long long temp = a[i];
         for (int j = 0; j < size_b; ++j) Result[i + j] += temp * b[j];
     }
-    return Result;
 }
 
 //Thuật toán Karatsuba song song nhân hai đa thức A, B có cùng bậc
 void ParallelKaratsuba(const long long* a, const long long* b, int size, Polynomial& Result, int depth) {
-    if (size <= 100) Result = BruteForceMultiply(a, size, b, size);
+    if (size <= 100) BruteForceMultiply(a, size, b, size, Result.data());
     else {
         int mid = size >> 1, high = size - mid;
         int midsize = (mid << 1) - 1, highsize = (high << 1) - 1;
         Polynomial P1(midsize);
         Polynomial P2(highsize);
         Polynomial P3(highsize);
-        Polynomial sumAsumB(high << 1);
+        Polynomial sumAsumB(high * 2);
         Add(a, mid, a + mid, high, sumAsumB.data());
         Add(b, mid, b + mid, high, &sumAsumB[high]);
 
