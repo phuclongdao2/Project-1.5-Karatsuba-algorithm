@@ -3,7 +3,7 @@
 //Cộng hai đa thức A, B (deg A <= deg B)
 void Add(const long long* a, int size_a, const long long* b, int size_b, long long* Result) {
     std::copy_n(b, size_b, Result);
-    std::transform(a, a + size_a, Result, Result, std::plus<>());
+    for (int i = 0; i < size_a; ++i) Result[i] += a[i];
 }
 
 //Thuật toán trực tiếp nhân hai đa thức A, B
@@ -19,39 +19,38 @@ void ParallelKaratsuba(const long long* a, const long long* b, int size, long lo
     if (size <= 100) BruteForceMultiply(a, size, b, size, Result);
     else {
         int mid = size >> 1, high = size - mid;
-        int midsize = (mid << 1) - 1, highsize = (high << 1) - 1;
-        Polynomial P1(midsize);
-        Polynomial P2(highsize);
+        int mid2 = mid << 1, highsize = (high << 1) - 1;
+        //P1: Result[0...mid*2-2], P2 : Result[mid*2...size*2-2]
         Polynomial P3(highsize);
-        Polynomial sumAsumB(high * 2);
+        Polynomial Q(highsize); //Q = P3 - P1 - P2
+        Polynomial sumAsumB(highsize + 1);
         Add(a, mid, a + mid, high, sumAsumB.data());
         Add(b, mid, b + mid, high, &sumAsumB[high]);
 
         //Có sử dụng tính toán song song
         if (depth) {
-            std::thread thread1([&] { ParallelKaratsuba(a, b, mid, P1.data(), depth - 1); });
-            std::thread thread2([&] { ParallelKaratsuba(a + mid, b + mid, high, P2.data(), depth - 1); });
+            std::thread thread1([&] { ParallelKaratsuba(a, b, mid, Result, depth - 1); });
+            std::thread thread2([&] { ParallelKaratsuba(a + mid, b + mid, high, Result + mid2, depth - 1); });
             ParallelKaratsuba(sumAsumB.data(), &sumAsumB[high], high, P3.data(), depth - 1);
             thread1.join(); thread2.join();
         }
 
         //Không sử dụng tính toán song song
         else {
-            ParallelKaratsuba(a, b, mid, P1.data(), 0);
-            ParallelKaratsuba(a + mid, b + mid, high, P2.data(), 0);
+            ParallelKaratsuba(a, b, mid, Result, 0);
+            ParallelKaratsuba(a + mid, b + mid, high, Result + mid2, 0);
             ParallelKaratsuba(sumAsumB.data(), &sumAsumB[high], high, P3.data(), 0);
         }
 
-        std::copy_n(P1.begin(), midsize, Result);
-        std::copy_n(P2.begin(), highsize, Result + mid * 2);
-        Result[midsize] = 0;
+        Result[mid2 - 1] = 0;
         int i = 0;
-        for (; i < midsize; ++i) Result[i + mid] += P3[i] - P1[i] - P2[i];
+        for (; i < mid2 - 1; ++i) Q[i] = P3[i] - Result[i] - Result[i + mid2];
         if (size & 1) {
-            Result[i + mid] += P3[i] - P2[i];
+            Q[i] = P3[i] - Result[i + mid2];
             ++i;
-            Result[i + mid] += P3[i] - P2[i];
+            Q[i] = P3[i] - Result[i + mid2];
         }
+        for (i = 0; i < highsize; ++i) Result[i + mid] += Q[i];
     }
 }
 
