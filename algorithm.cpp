@@ -43,15 +43,11 @@ void ParallelKaratsuba(const long long* a, const long long* b, int size, long lo
 
         result[midsize] = 0;
         int i = 0;
-        long long temp1, temp2;
-        if (size & 1) {
-            temp1 = P3[midsize] - result[midsize + mid2], temp2 = P3[mid2] - result[mid2 << 1];
-        }
         for (; i < mid; ++i) result[i + mid] += P3[i] - result[i] - result[i + mid2];
         for (; i < midsize; ++i) result[i + mid] = P3[i - mid] + P3[i] - result[i - mid] - result[i] - result[i + mid2];
         if (size & 1) {
-            result[i + mid] += temp1;
-            result[mid2 + mid] += temp2;
+            result[i + mid] += P3[i] - result[i + mid2];
+            result[mid2 + mid] +=  P3[mid2] - result[mid2 << 1];
         }
     }
 }
