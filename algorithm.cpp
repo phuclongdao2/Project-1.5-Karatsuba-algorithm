@@ -21,9 +21,8 @@ void ParallelKaratsuba(const long long* a, const long long* b, int size, long lo
         int mid = size >> 1, high = size - mid;
         int midsize = (mid << 1) - 1,  mid2 = midsize + 1, highsize = (high << 1) - 1;
         //P1: Result[0...mid*2-2], P2 : Result[mid*2...size*2-2]
-        //Q = P3 - P1 - P2
         //sumA: sumAsumB[0...high-1], sumB: sumAsumB[high...high*2-1]
-        Polynomial P3(highsize), Q(highsize), sumAsumB(highsize + 1);
+        Polynomial P3(highsize), sumAsumB(highsize + 1);
         Add(a, mid, a + mid, high, sumAsumB.data());
         Add(b, mid, b + mid, high, &sumAsumB[high]);
 
@@ -44,12 +43,16 @@ void ParallelKaratsuba(const long long* a, const long long* b, int size, long lo
 
         result[midsize] = 0;
         int i = 0;
-        for (; i < midsize; ++i) Q[i] = P3[i] - result[i] - result[i + mid2];
+        long long temp1, temp2;
         if (size & 1) {
-            Q[i] = P3[i] - result[i + mid2];
-            Q[mid2] = P3[mid2] - result[mid2 << 1];
+            temp1 = P3[midsize] - result[midsize + mid2], temp2 = P3[mid2] - result[mid2 << 1];
         }
-        for (i = 0; i < highsize; ++i) result[i + mid] += Q[i];
+        for (; i < mid; ++i) result[i + mid] += P3[i] - result[i] - result[i + mid2];
+        for (; i < midsize; ++i) result[i + mid] = P3[i - mid] + P3[i] - result[i - mid] - result[i] - result[i + mid2];
+        if (size & 1) {
+            result[i + mid] += temp1;
+            result[mid2 + mid] += temp2;
+        }
     }
 }
 
