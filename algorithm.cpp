@@ -10,7 +10,8 @@ void Add(const long long* a, int size_a, const long long* b, int size_b, long lo
 void BruteForceMultiply(const long long* a, int size_a, const long long* b, int size_b, long long* result) {
     for (int i = 0; i < size_a; ++i) {
         long long temp = a[i];
-        for (int j = 0; j < size_b; ++j) result[i + j] += temp * b[j];
+        for (int j = 0; j < size_b; ++j) result[j] += temp * b[j];
+        result++;
     }
 }
 
@@ -19,7 +20,8 @@ void ParallelKaratsuba(const long long* a, const long long* b, int size, long lo
     if (size <= 100) BruteForceMultiply(a, size, b, size, result);
     else {
         int mid = size >> 1, high = size - mid;
-        int midsize = (mid << 1) - 1,  mid2 = midsize + 1, highsize = (high << 1) - 1;
+        int mid2 = mid << 1, midsize = mid2 - 1, highsize = (high << 1) - 1;
+        long long* resmid = result + mid, * resmid2 = result + mid2;
         //P1: Result[0...mid * 2 - 2], P2 : Result[mid * 2...size * 2 - 2]
         //sumA: sumAsumB[0...high-1], sumB: sumAsumB[high...high*2-1]
         Polynomial P3(highsize), sumAsumB(highsize + 1);
@@ -29,7 +31,7 @@ void ParallelKaratsuba(const long long* a, const long long* b, int size, long lo
         //Có sử dụng tính toán song song
         if (depth) {
             std::thread thread1([&] { ParallelKaratsuba(a, b, mid, result, depth - 1); });
-            std::thread thread2([&] { ParallelKaratsuba(a + mid, b + mid, high, result + mid2, depth - 1); });
+            std::thread thread2([&] { ParallelKaratsuba(a + mid, b + mid, high, resmid2, depth - 1); });
             ParallelKaratsuba(sumAsumB.data(), &sumAsumB[high], high, P3.data(), depth - 1);
             thread1.join(); thread2.join();
         }
@@ -37,17 +39,17 @@ void ParallelKaratsuba(const long long* a, const long long* b, int size, long lo
         //Không sử dụng tính toán song song
         else {
             ParallelKaratsuba(a, b, mid, result, 0);
-            ParallelKaratsuba(a + mid, b + mid, high, result + mid2, 0);
+            ParallelKaratsuba(a + mid, b + mid, high, resmid2, 0);
             ParallelKaratsuba(sumAsumB.data(), &sumAsumB[high], high, P3.data(), 0);
         }
 
         result[midsize] = 0;
         int i = 0;
-        for (; i < mid; ++i) result[i + mid] += (P3[i] -= result[i]) - result[i + mid2];
-        for (; i < midsize; ++i) result[i + mid] = P3[i - mid] + P3[i] - result[i] - result[i + mid2];
+        for (; i < mid; ++i) resmid[i] += (P3[i] -= result[i]) - resmid2[i];
+        for (; i < midsize; ++i) resmid[i] = P3[i - mid] + P3[i] - result[i] - resmid2[i];
         if (size & 1) {
-            result[i + mid] += P3[i] - result[i + mid2];
-            result[mid2 + mid] +=  P3[mid2] - result[mid2 << 1];
+            resmid[i] += P3[i] - resmid2[i];
+            resmid[mid2] += P3[mid2] - resmid2[mid2];
         }
     }
 }
