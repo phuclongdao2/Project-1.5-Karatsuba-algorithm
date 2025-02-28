@@ -12,8 +12,8 @@ int main() {
     for (int i = 0; i <= deg; ++i) Q.push_back(dist(gen));
 
     //Tính P*Q bằng thuật toán trực tiếp (để kiểm tra kết quả)
-    Polynomial BruteForceAns((deg << 1) + 1, 0);
-    BruteForceMultiply(&P[0], deg + 1, &Q[0], deg + 1, BruteForceAns.data());
+    Polynomial BruteForceAns(P.size() + Q.size() - 1, 0);
+    BruteForceMultiply(&P[0], P.size(), &Q[0], Q.size(), BruteForceAns.data());
 
     //Tính P*Q bằng Karatsuba với depth lần lượt là 0, 1, ..., MAX_PARALLEL_DEPTH (depth = 0: không dùng tính toán song song)
     std::vector <double> time_taken[MAX_PARALLEL_DEPTH + 1];
