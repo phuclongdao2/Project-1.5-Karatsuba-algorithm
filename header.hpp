@@ -64,21 +64,23 @@ void ParallelKaratsuba(const long long* a, const long long* b, int size, long lo
 }
 
 //Quy về hai đa thức có bậc bằng nhau
-void PrepareKaratsuba(const Polynomial& A, const Polynomial& B, Polynomial& Result, int depth) {
-    int size = std::max(A.size(), B.size());
+void PrepareKaratsuba(const long long* a, int size_a, const long long* b, int size_b, Polynomial& Result, int depth) {
+    int size = std::max(size_a, size_b);
     Result.resize((size << 1) - 1);
-    if (A.size() < B.size()) {
-        Polynomial A_resized = A;
-        A_resized.resize(size, 0);
-        ParallelKaratsuba(A_resized.data(), B.data(), size, Result.data(), depth);
+    if (size_a < size_b) {
+        long long* a_resized = new long long[size]();
+        for (int i = 0; i < size_a; ++i) a_resized[i] = a[i];
+        ParallelKaratsuba(a_resized, b, size, Result.data(), depth);
+        delete[] a_resized;
     }
-    else if (A.size() > B.size()) {
-        Polynomial B_resized = B;
-        B_resized.resize(size, 0);
-        ParallelKaratsuba(A.data(), B_resized.data(), size, Result.data(), depth);
+    else if (size_a > size_b) {
+        long long* b_resized = new long long[size]();
+        for (int i = 0; i < size_b; ++i) b_resized[i] = a[i];
+        ParallelKaratsuba(a, b_resized, size, Result.data(), depth);
+        delete[] b_resized;
     }
-    else ParallelKaratsuba(A.data(), B.data(), size, Result.data(), depth);
-    Result.resize(A.size() + B.size() - 1);
+    else ParallelKaratsuba(a, b, size, Result.data(), depth);
+    Result.resize(size_a + size_b - 1);
 }
 
 //Đánh giá hiệu năng
@@ -102,7 +104,7 @@ void Test(int deg1, int deg2) {
         printf("Test %d:\n", test);
         for (int depth = 0; depth <= MAX_PARALLEL_DEPTH; ++depth) {
             clock_t start = clock();
-            PrepareKaratsuba(P, Q, ans[depth], depth);
+            PrepareKaratsuba(P.data(), deg1 + 1, Q.data(), deg2 + 1, ans[depth], depth);
             clock_t finish = clock();
             double taken = (double)(finish - start) / CLOCKS_PER_SEC * 1000;
             if (test > NUM_TESTS / 2) time_taken[depth].push_back(taken);
