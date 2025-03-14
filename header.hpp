@@ -1,7 +1,5 @@
-#pragma once
 #include <chrono>
 #include <iostream>
-#include <numeric>
 #include <random>
 #include <thread>
 #include <vector>
@@ -21,7 +19,7 @@ template <typename T> void BruteForceMultiply(const T* a, uint size_a, const T* 
 template <typename T> void ParallelKaratsuba(const T* a, const T* b, uint size, T* result, uint depth) {
     if (size <= 64) BruteForceMultiply(a, size, b, size, result);
     else {
-        //P1: Result[0 ... mid * 2 - 2], P2 : Result[mid * 2 ... size * 2 - 2]
+        //P1: Result[0 ... mid * 2 - 2], P2: Result[mid * 2 ... size * 2 - 2]
         //sumA: P3[high * 2 - 1 ... high * 3 - 2], sumB: P3[high * 3 - 1 ... high * 4 - 2]
         uint mid = size >> 1, high = size - mid, mid2 = mid << 1, midsize = mid2 - 1;
         T* resmid = result + mid, * P2 = result + mid2;
@@ -53,7 +51,6 @@ template <typename T> void ParallelKaratsuba(const T* a, const T* b, uint size, 
             ParallelKaratsuba(sumA, sumB, high, P3, 0);
         }
 
-        result[midsize] = 0;
         for (i = 0; i < mid; ++i) resmid[i] += (P3[i] -= result[i]) - P2[i];
         for (; i < midsize; ++i) resmid[i] = P3[i - mid] + P3[i] - result[i] - P2[i];
         if (size & 1) {
